@@ -208,10 +208,13 @@ Build vs. adopt for the backend:
   trafilatura). More work up front, one coherent model, editions and rules
   become straightforward.
 
-Recommendation: build, because editions/triage/queue/Kindle are the product
-and the feed fetcher is the smallest piece. Study Omnivore's open-source
-codebase (Apache-2.0, iOS/Mac/web/newsletters/feeds) before designing; it is
-the closest existing template even though the service shut down.
+Recommendation: build, deriving the backend core from Miniflux (Apache-2.0,
+Go) rather than from zero, because editions/triage/queue/Kindle are the
+product and the feed fetcher is the smallest piece. Study Omnivore's
+open-source codebase (AGPL-3.0, iOS/Mac/web/newsletters/feeds) before
+designing; it is the closest existing template even though the service shut
+down, but its licence makes it study-only unless we also ship AGPL. See
+[LANDSCAPE.md](LANDSCAPE.md) §3–4 for the full build-vs-reuse survey.
 
 ## 7. Platform strategy
 
