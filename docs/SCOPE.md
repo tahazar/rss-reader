@@ -80,7 +80,7 @@ These sit above the feature list and decide the architecture in §6.
 - Tags/folders for sources and for saved items.
 - Highlights and notes on saved articles, synced back from Kindle where the
   Kindle "My Clippings" export allows it.
-- Apple News+ hand-off (see §5.4) on iOS/Mac.
+- Apple News+ hand-off (see §5.2) on iOS/Mac.
 - Search across archived full text.
 - Rules: "anything from this source over 2,000 words goes straight to the
   queue", "mute items matching X".
