@@ -1,6 +1,9 @@
 # Scope: Feed Reader + Read-It-Later
 
 Status: scoping draft, pre-design. Last updated 2026-09-14.
+Companion: [LANDSCAPE.md](LANDSCAPE.md) (competitive survey, open-source
+bases, Kindle opportunity, UX thesis).
+Decisions taken so far: phased plan as in §8; SwiftUI client first (§7 option A).
 
 This document answers "what would this take?" before a formal design doc. It
 covers the product idea, what is and is not technically feasible for each
@@ -285,7 +288,7 @@ Exit criterion: you use it daily instead of the apps it replaces.
 2. **Hosting.** Self-hosted single binary you run yourself, or a hosted
    service? This drives the storage choice (SQLite vs Postgres) and how much
    ops work is in scope.
-3. **Platform option** from §7 (recommendation: A).
+3. ~~**Platform option** from §7 (recommendation: A).~~ **Decided: A, SwiftUI first.**
 4. **Podcasts:** feed-only with hand-off, or a player in v1?
 5. **Kindle delivery default:** email from a shared app address (one-time
    whitelist, simplest) or per-user sender addresses (more robust against
@@ -309,8 +312,8 @@ Exit criterion: you use it daily instead of the apps it replaces.
 
 - **Readwise Reader**: feeds + read-later + newsletters + Kindle digest. The
   closest commercial analog; study its triage and digest flows.
-- **Omnivore** (open source, discontinued): iOS/Mac/web, newsletters, feeds.
-  Best open codebase to learn from.
+- **Omnivore** (open source, AGPL, discontinued): iOS/Mac/web, newsletters,
+  feeds. Best open codebase to learn from; licence makes it study-only.
 - **Wallabag**: self-hosted read-later with EPUB export and Kindle email.
 - **Feedbin**: hosted RSS with newsletter addresses and YouTube support.
 - **Miniflux / FreshRSS**: self-hosted feed servers with clean APIs.
