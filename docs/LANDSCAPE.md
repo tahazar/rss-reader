@@ -1,8 +1,9 @@
 # Landscape: readers, open-source bases, and where to innovate
 
 Status: research synthesis, pre-design. Last updated 2026-09-14.
-Companion to [SCOPE.md](SCOPE.md). Decisions already taken: phased plan as
-scoped, SwiftUI client first.
+Companion to [SCOPE.md](SCOPE.md). Decisions already taken: free and open
+source, no server we operate, on-device processing with iCloud sync, no
+telemetry, SwiftUI client first, phased plan as scoped.
 
 This document answers three questions:
 
@@ -40,6 +41,26 @@ Two facts about this split matter for us:
   Users want no *counts* and no *guilt*, but they still want a visible
   "already seen" signal. That is a precise UX requirement.
 
+### 1a. The obvious question: why not just use or extend NetNewsWire?
+
+NetNewsWire already is free, MIT-licensed, telemetry-free and iCloud-synced,
+which is exactly our model. Three reasons to build alongside it rather than
+inside it:
+
+- **Product shape.** NetNewsWire is a classic unread-inbox reader. Editions,
+  triage-first, no unread counts and "long-form leaves the phone" invert its
+  core model; that is a fork in philosophy, not a feature request.
+- **Read-later and Kindle are out of its scope.** Its maintainers have kept
+  it a feed reader on purpose, and its most-requested features (filtering,
+  custom smart feeds) have been open for years.
+- **Architecture.** It is AppKit and UIKit with a large legacy surface.
+  Starting in SwiftUI with CKSyncEngine is cheaper than retrofitting.
+
+What we do take from it: its MIT-licensed Swift packages for feed parsing and
+article storage, its CloudKit sync experience, and its stance on privacy.
+Contributing fixes upstream where we find them is the right neighbourly
+posture.
+
 ## 2. Table stakes for a modern reader
 
 Features a reviewer or a switcher will look for on day one. Phase column maps
@@ -70,13 +91,17 @@ Features we can skip without being judged for it: AI summaries and chat
 complaints), social layers and creator tipping (Folo), text-to-speech
 (Matter, Instapaper).
 
-Pricing observed, for the eventual business decision: free open source
+Pricing observed, for context (we have decided on free with no paywalled
+basics): free open source
 (NetNewsWire, feeeed), one-time $5–10 (Reeder Classic, lire, Current), cheap
 subscriptions $10–20/yr (Reeder, Tapestry), mid $30–90/yr (Unread, Instapaper,
 Feedbin, Feedly, Inoreader), premium ~$120/yr (Readwise). Instapaper doubled
 its price in 2025 and put Kindle delivery behind Premium in 2026; both drew
 strong backlash, which says the audience is price-sensitive and Kindle
-delivery is something they expected to be included.
+delivery is something they expected to be included. Reeder's free tier stops
+at ten feeds and withholds OPML import, so a switcher cannot even bring their
+subscriptions over without paying; that is the pattern we are positioned
+against.
 
 ## 3. Open-source bases: what exists
 
@@ -150,37 +175,47 @@ Sidecars to run as separate services, licence-isolated behind HTTP: **RSSHub**
 
 ## 4. Recommendation: reuse, fork, write
 
-**Write fresh: the SwiftUI client.** Nothing permissive exists, and UX is our
-stated differentiator anyway. Model the sync layer and article store on
-NetNewsWire; vendor FeedKit, SwiftSoup, swift-readability.
+The serverless decision removes the entire backend column from §3.2. Those
+projects remain useful to read, not to run. What is left is Swift.
 
-**Fork or heavily borrow: Miniflux for the backend core.** Apache-2.0, Go,
-Postgres, proven fetcher, scheduler, OPML, filters, and it exposes the
-Google Reader and Fever APIs. Extend it with editions, a read-later table,
-save-URL endpoints, and the Kindle pipeline. Keep everything in Go so
-extraction (go-trafilatura + FiveFilters site configs) and EPUB (go-epub)
-stay in-process.
+**Write fresh: the SwiftUI app.** No permissively licensed SwiftUI reader
+exists, and UX is the differentiator anyway.
 
-**Run as isolated services:** RSSHub and/or RSS-Bridge for feedless sites;
-an inbound mail webhook modelled on Kill the Newsletter for newsletters;
-Calibre only if we ever want its recipes.
+**Vendor (Swift packages):**
 
-**Study, do not copy code from (AGPL):** Omnivore, Readeck, Folo, FreshRSS,
-Karakeep. Feedbin (MIT) is fair game to read for its Kindle pipeline.
+- **FeedKit** (MIT) for RSS, Atom and JSON Feed parsing. NetNewsWire's own
+  parser package (MIT) is the alternative if FeedKit's edge-case handling
+  disappoints in Phase 0.
+- **SwiftSoup** (MIT) for HTML handling and sanitising.
+- **lake-of-fire/swift-readability** (BSD-3) for on-device extraction. Young;
+  pin a commit and contribute fixes upstream.
+- **ZIPFoundation** (MIT) under our own small EPUB 3 writer.
+- Apple frameworks for the rest: CKSyncEngine for sync, vImage or Core Image
+  for e-ink image processing, BackgroundTasks for scheduling, MailCore-class
+  library or a minimal SMTP client for sending from the user's account.
 
-**A sequencing insight from this.** Because a Miniflux-derived backend speaks
-the Google Reader API, NetNewsWire, Reeder Classic, Unread and lire can act as
-the client on day one. That lets the backend, editions and Kindle pipeline be
-dogfooded for weeks before a line of SwiftUI is written, and de-risks the two
-hardest pieces (extraction quality, Kindle output) first. It does not change
-the agreed phases; it suggests ordering Phase 1 as backend → Kindle spike →
-SwiftUI client rather than client-first.
+**Lift code and lessons from (MIT):** NetNewsWire's CloudKit account,
+article database and feed-refresh scheduling; Shiori's readable-archive
+approach; Feedbin's Kindle pipeline for what an EPUB digest should contain.
 
-**Licensing decision needed.** If the product may ever ship closed-source or
-as a paid hosted service, AGPL components must stay behind service
-boundaries, as above. If we open-source under AGPL ourselves, Readeck's EPUB
-and mailer code becomes directly reusable. This should be settled before the
-design doc.
+**Study only (AGPL or closed):** Omnivore's SwiftUI reader view and
+highlights, Readeck's EPUB and mailer behaviour, Folo and Reeder for UI
+ideas, KindleEar and RSSPub for digest structure and image handling, Calibre
+recipes for how a real periodical is sectioned.
+
+**Not applicable any more:** Miniflux, FreshRSS, RSSHub, RSS-Bridge, Kill the
+Newsletter as things we run. Users may still point the app at a public
+RSSHub or Kill the Newsletter instance if they choose; that is their call,
+not our infrastructure.
+
+**Sequencing.** Without a backend, the dogfooding trick of using NetNewsWire
+as an interim client goes away. Phase 0 spikes carry that de-risking load
+instead: the CKSyncEngine data model, the EPUB writer on a real Kindle, and
+the extraction corpus, before the main UI is built.
+
+**Licence.** MIT for our own code, matching every Swift dependency above and
+NetNewsWire. This keeps AGPL code strictly study-only and avoids the App
+Store friction the GPL family has had.
 
 ## 5. The Kindle opportunity, examined
 
@@ -245,11 +280,12 @@ research, with sharper edges.
 
 ### 5.4 Ranked opportunities
 
-1. **Verified-delivery morning edition with sections.** Calibre-quality
-   periodical structure, rolling replacement of yesterday's edition, and a
-   per-edition delivery timeline surfaced in the app. Directly answers
-   Instapaper's paywall and the SaaS crowd's flat digests. This is the
-   headline feature.
+1. **Morning edition with sections, delivered from the user's own account.**
+   Calibre-quality periodical structure, rolling replacement of yesterday's
+   edition, and a per-edition delivery timeline in the app (mail server
+   accepted; Amazon failure email detected when mailbox access is granted).
+   Free, with no server in the loop, it directly answers Instapaper's
+   paywall and the SaaS crowd's flat digests. This is the headline feature.
 2. **E-ink typography and asset pipeline.** Per-source CSS profiles,
    dithered and contrast-boosted images sized to the target device, table and
    code reflow. Cheap relative to its visibility; every competitor is bad at
@@ -273,8 +309,10 @@ research, with sharper edges.
   path, never depend on reverse-engineered clients, and keep EPUB export and
   the Kindle app share sheet as fallbacks.
 - Instapaper's stated reason for paywalling (per-user parse, image fetch,
-  EPUB build, email) is a real cost. Our pipeline must be cheap per edition:
-  cache extractions, resize once, batch sends.
+  EPUB build, email) is a real cost for a service. It is zero for us, because
+  the work runs on the user's device and the mail goes through their account.
+  That is the structural reason this can stay free where competitors could
+  not.
 - "Newspaper" is a metaphor users understand but Kindle's flat TOC limits how
   literal it can be. Prototype the navigation on a real device early.
 
@@ -321,19 +359,19 @@ delivers it, reliably and beautifully, to the device you actually read on.
 
 Nearest competitor: Readwise Reader (feeds + read-later + digest, ~$120/yr).
 We differ on edition structure, e-ink quality, delivery visibility,
-round-trip where possible, Apple-native speed and typography, and price.
+round-trip where possible, Apple-native speed and typography, and on being
+free, open source, and account-free with nothing running on our side.
 
 ## 8. Decisions this research adds to SCOPE.md §9
 
-- **Licence of our own code** (see §4). Determines whether AGPL projects are
-  reusable or study-only.
-- **Backend-first dogfooding** with NetNewsWire as the interim client, or
-  client-first? (Recommendation: backend-first, see §4.)
-- **Kobo as a first-class target** from Phase 2, given it is the only
-  e-reader with an open round-trip? (Recommendation: yes, it is cheap once
-  EPUB exists.)
-- **Kindle-browser companion**: experiment or cut? (Recommendation: cut from
-  the plan, revisit if users ask.)
+- **Licence**: MIT recommended (see §4).
+- **Kobo**: file export in Phase 3; the Instapaper API route is out under
+  the no-third-party-accounts principle. Highlight import from a mounted Kobo
+  on the Mac is cheap and worth doing.
+- **Kindle-browser companion**: cut. Dead category, and it would need a
+  server to render for the device.
+- **Contribution posture toward NetNewsWire**: upstream fixes to shared
+  packages where we find them.
 
 ## 9. Sources
 
